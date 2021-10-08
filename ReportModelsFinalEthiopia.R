@@ -148,7 +148,7 @@ optCutOff <- optimalCutoff(EHouseholdtestset$childNumDefiniteHazardCat, pred_glm
 pred_glm_factorFull <- ifelse(pred_glmFull > optCutOff, 1, 0)
 head(data.frame(pred_glmFull,pred_glm_factorFull),30)
 
-#Code to see confusion matrix and statistics.Sensitivity is low. Accuracy is .77761
+#Code to see confusion matrix and statistics.Sensitivity is low. 
 caret::confusionMatrix(as.factor(pred_glm_factorFull), as.factor(EHouseholdtestset$childNumDefiniteHazardCat))
 
 #ROC curve - obtain the Area under the curve 
@@ -163,7 +163,7 @@ optCutOff <- optimalCutoff(EHouseholdtestset$childNumDefiniteHazardCat, pred_glm
 pred_glm_factor <- ifelse(pred_glm > optCutOff, 1, 0)
 head(data.frame(pred_glm,pred_glm_factor),30)
 
-#Code to see confusion matrix and statistics. Sensitivity is low. Accuracy
+#Code to see confusion matrix and statistics. Sensitivity is low. 
 caret::confusionMatrix(as.factor(pred_glm_factor), as.factor(EHouseholdtestset$childNumDefiniteHazardCat))
  
 #ROC curve - obtain the Area under the curve 
