@@ -24,14 +24,6 @@ ethiopiaHousehold <- read.csv("../Data/FinalData/ethiopiaHousehold.csv",
 ethiopiaIndividual <- read.csv("../Data/FinalData/ethiopiaIndividual.csv",
                                stringsAsFactors = FALSE)
 
-# Loading in Uganda datasets
-uganda <- read.csv("../Data/FinalData/ugandaFinal.csv",
-                   stringsAsFactors = FALSE)
-ugandaHousehold <- read.csv("../Data/FinalData/ugandaHousehold.csv",
-                            stringsAsFactors = FALSE)
-ugandaIndividual <- read.csv("../Data/FinalData/ugandaIndividual.csv",
-                             stringsAsFactors = FALSE)
-
 # Creating new dataframes for modeling
 
 # Ethiopia Household Model Data
@@ -53,60 +45,7 @@ ethiopiaHouseholdmComplete <- ethiopiaHouseholdm %>%
          homeOwner, homeRooms, totalIncome, totalIncomeLog, totalAdults) %>%
   na.omit()
 
-# Ethiopia Individual Model Data
-ethiopiaIndividualm <- ethiopiaIndividual %>%
-  filter(age >= 5 & age <= 17, headType != "Child (<18)") %>%
-  group_by(X) %>%
-  mutate(anyDefiniteHazardIndCat = ifelse(anyDefiniteHazardInd > 0, 1, 0),
-         anyDefiniteWorstIndCat = ifelse(anyDefiniteWorstInd > 0, 1, 0),
-         totalIncomeLog = log(totalIncome + 1),
-         homeOwner = ifelse(homeOwner == "Owned by the household", "Owned", 
-                            ifelse(homeOwner == "Rented", "Rented", "Other")),
-         hazardCat = ifelse(anyDefiniteHazardInd == 1, "Yes", "No"),
-         worstCat = ifelse(anyDefiniteWorstInd == 1, "Yes", "No")) %>%
-  ungroup()
-# Ethiopia Individual Model Data Complete Cases
-ethiopiaIndividualmComplete <- ethiopiaIndividualm %>%
-  select(X, anyDefiniteHazardIndCat, anyDefiniteWorstIndCat,
-         sex, age, readWrite, avg517Age, avgAdultAge,
-         headType, totalChild517, residenceType, homeOwner, homeRooms, 
-         totalIncome, totalIncomeLog, totalAdults) %>%
-  na.omit() 
 
-# Uganda Household Model Data
-ugandaHouseholdm <-ugandaHousehold %>%
-  filter(totalChild517 > 0, headType != "Child (<18)") %>%
-  group_by(quesID) %>%
-  mutate(childNumDefiniteHazardCat = ifelse(childNumDefiniteHazard > 0, 1, 0),
-         childNumDefiniteWorstCat = ifelse(childNumDefiniteWorst > 0, 1, 0),
-         hazardCat = ifelse(childNumDefiniteHazardCat == 1, "Yes", "No"),
-         worstCat = ifelse(childNumDefiniteWorstCat == 1, "Yes", "No")) %>%
-  ungroup()
-# Uganda Household Model Data Complete Cases
-ugandaHouseholdmComplete <- ugandaHouseholdm %>%
-  select(quesID, childNumDefiniteHazardCat, childNumDefiniteWorstCat,
-         avg517Age, avgAdultAge, headType,
-         totalChild517, residence, totalAdults) %>%
-  na.omit()
-
-# Uganda Individual Model Data
-ugandaIndividualm <- ugandaIndividual %>%
-  filter(age >= 5 & age <= 17, headType != "Child (<18)") %>%
-  group_by(X) %>%
-  mutate(anyDefiniteHazardIndCat = ifelse(anyDefiniteHazardInd > 0, 1, 0),
-         anyDefiniteWorstIndCat = ifelse(anyDefiniteWorstInd > 0, 1, 0),
-         educAccess = ifelse(educAccess == 1, "Yes", "No"),
-         healthAccess = ifelse(healthAccess == 1, "Yes", "No"),
-         hazardCat = ifelse(anyDefiniteHazardIndCat == 1, "Yes", "No"),
-         worstCat = ifelse(anyDefiniteWorstIndCat == 1, "Yes", "No")) %>%
-  ungroup()
-# Uganda Individual Model Data Complete Cases
-ugandaIndividualmComplete <- ugandaIndividualm %>%
-  select(X, anyDefiniteHazardIndCat, anyDefiniteWorstIndCat,
-         avg517Age, avgAdultAge, headType,
-         totalChild517, residence, totalAdults,
-         sex, age, educAccess, healthAccess) %>%
-  na.omit()
 
 #####################################################################################
 # ETHIOPIA HOUSEHOLD MODELS
