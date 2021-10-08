@@ -48,8 +48,6 @@ ethiopiaHouseholdmComplete <- ethiopiaHouseholdm %>%
 
 
 #####################################################################################
-# ETHIOPIA HOUSEHOLD MODELS
-
 
 # Ethiopia Household Hazard
 set.seed(10)
