@@ -1,0 +1,282 @@
+---
+title: "Assessing the risk of child labor in Ethiopia and Uganda"
+
+header-includes:
+   - \usepackage{array}
+date: ""
+output: 
+  pdf_document:
+    fig_height: 3
+    fig_width: 5
+  html_document:
+    fig_height: 3
+    fig_width: 5
+  word_document:
+    fig_height: 3
+    fig_width: 5
+---
+
+```{r, setup, include = FALSE}
+require(MASS)
+require(mosaic)
+require(dplyr)
+require(tidyr)
+require(ggplot2)
+require(xtable)
+require(lme4)
+require(gridExtra)
+select <- dplyr::select
+
+# Some customization.  You can alter or delete as desired (if you know what you are doing).
+trellis.par.set(theme=theme.mosaic()) # change default color scheme for lattice
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(xtable.comment = FALSE)
+```
+
+```{r, include = FALSE}
+# Loading in all datasets and necessary files
+
+# Loading data for counts for child labor questions
+source("countsForQuestions.R")
+source("ReportModelsFinalEthiopia.R")
+
+# Loading in Ethiopia datasets
+ethiopia <- read.csv("../Data/FinalData/ethiopiaFinal.csv",
+                     stringsAsFactors = FALSE)
+ethiopiaHousehold <- read.csv("../Data/FinalData/ethiopiaHousehold.csv",
+                     stringsAsFactors = FALSE)
+ethiopiaIndividual <- read.csv("../Data/FinalData/ethiopiaIndividual.csv",
+                     stringsAsFactors = FALSE)
+
+# Loading in Uganda datasets
+uganda <- read.csv("../Data/FinalData/ugandaFinal.csv",
+                     stringsAsFactors = FALSE)
+ugandaHousehold <- read.csv("../Data/FinalData/ugandaHousehold.csv",
+                     stringsAsFactors = FALSE)
+ugandaIndividual <- read.csv("../Data/FinalData/ugandaIndividual.csv",
+                     stringsAsFactors = FALSE)
+```
+
+# 4. Results
+
+## 4.2 Exploratory Data Analysis of Outcome Variables
+
+In this section, the distribution for each outcome variable is assessed, as well as the relationships between predictor and outcome variables. All variables in this section are assessed through logistic regression modeling. 
+
+### 4.2.1 Ethiopia Household Level EDA
+
+```{r, echo = FALSE, fig.width = 7, fig.height = 4}
+# Counts for hazard ethiopia household
+p1 <- ggplot(ethiopiaHouseholdm, aes(hazardCat)) + geom_bar(fill = "aquamarine3") +
+  xlab("Are there any children in hazardous work?") + ylab("Number of households") +
+  ggtitle("Ethiopia households with \nand without hazardous child labor") +
+  geom_text(stat='count', aes(label=..count..), vjust=-.5) +
+  scale_y_continuous(limits = c(0, 1550))
+# Counts for worst ethiopia household
+p2 <- ggplot(ethiopiaHouseholdm, aes(worstCat)) + geom_bar(fill = "aquamarine3") +
+  xlab("Are there any children in worst child labor?") + ylab("Number of households") +
+  ggtitle("Ethiopia households with \nand without worst child labor") +
+  geom_text(stat='count', aes(label=..count..), vjust=-.5) +
+  scale_y_continuous(limits = c(0, 1250))
+grid.arrange(p1, p2, ncol = 2)
+```
+
+```{r, echo = FALSE, results = 'asis'}
+# hazard and worst
+hazardWorstEH <- ethiopiaHouseholdm %>%
+  group_by(hazardCat, worstCat) %>%
+  summarize(n = n()) %>%
+  ungroup() %>%
+  spread(hazardCat, n) %>%
+  arrange(desc(Yes)) %>%
+  select("Any children in worst child labor?" = worstCat,
+         "Hazardous Labor: Yes" = Yes, 
+         "Hazardous Labor: No" = No) %>%
+  as.data.frame()
+print(xtable(hazardWorstEH, caption = 'Overlap between worst and hazardous labor outcomes for Ethiopia households'),
+      include.rownames = FALSE, caption.placement = "top")
+```
+
+
+### 4.4.1 Female vs. Male Headed Households
+
+```{r, echo = FALSE}
+# Code needed to make graphs and tables in this section
+
+# number of households per head type in Ethiopia
+eTextHead <- ethiopiaHouseholdm %>%
+  select(headType) %>%
+  group_by(headType) %>%
+  summarize(n = n()) %>%
+  ungroup() %>%
+  spread(headType, n)
+
+# number of households per head type in Uganda
+uTextHead <- ugandaHouseholdm %>%
+  select(headType) %>%
+  group_by(headType) %>%
+  summarize(n = n()) %>%
+  ungroup() %>%
+  spread(headType, n)
+
+eHeadLabels <- c(`Adult Male` = "Adult Male\n(n = 1272)",
+                 `Married Adult Female` = "Married Adult Female\n(n = 250)",
+                 `Single Adult Female` = "Single Adult Female\n(n = 283)")
+
+uHeadLabels <- c(`Adult Male` = "Adult Male\n(n = 473)",
+                 `Married Adult Female` = "Married Adult Female\n(n = 29)",
+                 `Single Adult Female` = "Single Adult Female\n(n = 113)")
+
+# Ethiopia Household Data for Graphs 
+eHouseHeadHazard <- ethiopiaHouseholdm %>%
+  mutate(hazardCat = ifelse(childNumDefiniteHazardCat == 1, "Yes", "No"),
+         worstCat = ifelse(childNumDefiniteWorstCat == 1, "Yes", "No")) %>%
+  select(headType, hazardCat) %>%
+  group_by(headType, hazardCat) %>%
+  summarize(n = n()) %>%
+  mutate(total = ifelse(headType == "Adult Male", 1272, 
+                        ifelse(headType == "Married Adult Female", 250, 283)),
+         percent = round((n/total)*100, 1),
+         percentLabel = paste0(percent, "%", sep = ""))
+
+eHouseHeadWorst <- ethiopiaHouseholdm %>%
+  mutate(hazardCat = ifelse(childNumDefiniteHazardCat == 1, "Yes", "No"),
+         worstCat = ifelse(childNumDefiniteWorstCat == 1, "Yes", "No")) %>%
+  select(headType, worstCat) %>%
+  group_by(headType, worstCat) %>%
+  summarize(n = n()) %>%
+  mutate(total = ifelse(headType == "Adult Male", 1272, 
+                        ifelse(headType == "Married Adult Female", 250, 283)),
+         percent = round((n/total)*100, 1),
+         percentLabel = paste0(percent, "%", sep = ""))
+
+# Uganda Household Data for Graphs
+uHouseHeadHazard <- ugandaHouseholdm %>%
+  mutate(hazardCat = ifelse(childNumDefiniteHazardCat == 1, "Yes", "No"),
+         worstCat = ifelse(childNumDefiniteWorstCat == 1, "Yes", "No")) %>%
+  select(headType, hazardCat) %>%
+  group_by(headType, hazardCat) %>%
+  summarize(n = n()) %>%
+  mutate(total = ifelse(headType == "Adult Male", 473, 
+                        ifelse(headType == "Married Adult Female", 29, 113)),
+         percent = round((n/total)*100, 1),
+         percentLabel = paste0(percent, "%", sep = ""))
+
+uHouseHeadWorst <- ugandaHouseholdm %>%
+  mutate(hazardCat = ifelse(childNumDefiniteHazardCat == 1, "Yes", "No"),
+         worstCat = ifelse(childNumDefiniteWorstCat == 1, "Yes", "No")) %>%
+  select(headType, worstCat) %>%
+  group_by(headType, worstCat) %>%
+  summarize(n = n()) %>%
+  mutate(total = ifelse(headType == "Adult Male", 473, 
+                        ifelse(headType == "Married Adult Female", 29, 113)),
+         percent = round((n/total)*100, 1),
+         percentLabel = paste0(percent, "%", sep = ""))
+```
+
+The figure below displays the number of children in hazardous labor per household in Ethiopia, separated by household head. Note instead of a binary indicator of whether or not the house has any children in hazardous work, the exact number of children in hazardous work in the household are shown. The number of observations for each type of household head is displayed as "n", and instead of counts, the instances of how many houses contain a certain number of children in hazardous labor are displayed as proportions. For example, about 50% of single adult female headed houses have exactly one child in hazardous labor. Looking at these proportions across the three groups, adult male headed houses tend to have no children in hazardous labor at a higher rate than both married and single adult female headed houses. 
+
+In fact, 25% of adult male headed households have no children in hazardous labor, meaning that 75% of adult male headed houses have at least one child in hazardous labor. Approximately 80% married adult female headed houses have at least one child in hazardous labor, and the same is true for single adult female headed houses. Among the houses that do have a child in hazardous labor, all household types tend to have only one child in hazardous labor, but adult male headed households proportionally have more households with more than one child in hazardous labor.
+
+When this variable was included in predicting hazardous labor for Ethiopia households, it was found that both married adult female heads and single adult female heads were significant predictors, and associated with higher odds of hazardous labor compared to male headed households. Therefore, there is evidence to suggest that male headed households are associated with lower odds of housing a child in hazardous labor.
+
+```{r, echo = FALSE, fig.height = 4, fig.width = 7}
+ggplot(eHouseHeadHazard, aes(hazardCat, percent)) + 
+  geom_bar(stat = "identity", fill = "aquamarine3") + 
+  facet_wrap(~headType, labeller = as_labeller(eHeadLabels)) +
+  xlab("Is there a child (ages 5 to 17) in Hazardous Labor?") +
+  ylab("Percentage of Households") + 
+  ggtitle("Percentage of Houses with Children in Hazardous Labor \nSeparated by Household Head Type in Ethiopia") +
+  geom_text(aes(label=eHouseHeadHazard$percentLabel), vjust=-.5) +
+  scale_y_continuous(limits = c(0, 100))
+```
+
+The figure below displays the same information except with children in the worst forms of child labor. The majority of all households have at least one child in the worst form of child labor, but adult males proportionally have more households with no children in the worst forms of child labor (with almost 40%) than married and single adult female households, which have 35% and 28% households with no children in the worst forms of child labor, respectively. Therefore, based on this graphic, it appears that female headed households (both married and single) have higher instances of having a child in child labor than adult male headed houses in Ethiopia.
+
+When this parameter was included in predicting worst child labor instances at a household level in Ethiopia, single adult female headed households were significantly associated with increased odds of worst child labor household instances compared to male headed households. However, married adult female headed households were not found to be significantly different than male headed households. 
+
+```{r, echo = FALSE, fig.height = 4, fig.width = 7}
+ggplot(eHouseHeadWorst, aes(worstCat, percent)) + 
+  geom_bar(stat = "identity", fill = "aquamarine3") + 
+  facet_wrap(~headType, labeller = as_labeller(eHeadLabels)) +
+  xlab("Is there a child (ages 5 to 17) in Worst Labor?") +
+  ylab("Percentage of Households") + 
+  ggtitle("Percentage of Houses with Children in Worst Child Labor \nSeparated by Household Head Type in Ethiopia") +
+  geom_text(aes(label=eHouseHeadWorst$percentLabel), vjust=-.5) +
+  scale_y_continuous(limits = c(0, 100))
+```
+
+The figure below shows the same information concerning hazardous labor, except for Uganda. The first thing to note is that the maximum number of children in hazardous labor in one household observed is 11, which is more than what was observed in Ethiopia. Less than 5% of households for each household head type have no children in hazardous labor, and the majority of households have either 3 or 4 children in hazardous labor for all head types. 
+
+Based on this graphic, there does not seem to be a large difference between adult male, married adult female, and single adult female headed households in terms of the number of children in hazardous labor that live in the household. Furthermore, this predictor was not found to improve model performance for the logistic regression model. It is unclear whether these results are due to how the outcome variable (hazardous labor) was defined and created in the dataset, or if these results are due to only targeting areas in Uganda that were previously believed to have the highest instances of hazardous labor and worst forms of child labor.
+
+```{r, echo = FALSE, fig.height = 4, fig.width = 7}
+ggplot(uHouseHeadHazard, aes(hazardCat, percent)) + 
+  geom_bar(stat = "identity", fill = "aquamarine3") + 
+  facet_wrap(~headType, labeller = as_labeller(uHeadLabels)) +
+  xlab("Is there a child (ages 5 to 17) in Hazardous Labor?") +
+  ylab("Percentage of Households") + 
+  ggtitle("Percentage of Houses with Children in Hazardous Labor \nSeparated by Household Head Type in Uganda") +
+  geom_text(aes(label=uHouseHeadHazard$percentLabel), vjust=-.3) +
+  scale_y_continuous(limits = c(0, 100))
+```
+
+Lastly, the figure below displays the same information except with worst forms of child labor. The same conclusions can be made for Uganda households and the number of children in the worst forms of child labor, and this may be because there was an overlap of variables as to what contributed to counting children in hazardous labor or the worst forms of child labor. Again, these high proportions of households with at least one child in the worst forms of child labor may be due to how the outcome variable (worst forms of child labor) were defined and created from the survey data, and also the targeted areas from which data was collected.
+
+```{r, echo = FALSE, fig.height = 4, fig.width = 7}
+ggplot(uHouseHeadWorst, aes(worstCat, percent)) + 
+  geom_bar(stat = "identity", fill = "aquamarine3") + 
+  facet_wrap(~headType, labeller = as_labeller(uHeadLabels)) +
+  xlab("Is there a child (ages 5 to 17) in Worst Labor?") +
+  ylab("Percentage of Households") + 
+  ggtitle("Percentage of Houses with Children in Worst Child Labor \nSeparated by Household Head Type in Uganda") +
+  geom_text(aes(label=uHouseHeadWorst$percentLabel), vjust=-.3) +
+  scale_y_continuous(limits = c(0, 102))
+```
+
+### 4.4.2 Child Headed Houseohlds
+
+In Ethiopia, there are exactly 10 households that were reported being headed by children, and there were 2 households in Uganda that were headed by children. Since this is a small subset of households, these households were removed from modeling, but are analyzed here. The table displays the number child headed households that housed each possible value of the number of children in hazardous labor. The table shows the same information except with the worst forms of child labor. Among the 10 households, 5 of them did not house children in hazardous labor, while the other 5 housed atleast one child in hazardous labor. Similarly, 5 households did not house any children in the worst forms of child labor, while 5 of them housed at least one child.
+
+```{r, echo = FALSE, results = 'asis'}
+# Ethiopia Child Headed Hazard
+ethiopiaChildHazard <- ethiopiaHousehold %>%
+  filter(headType == "Child (<18)") %>%
+  select(quesID, childNumDefiniteHazard) %>%
+  group_by(childNumDefiniteHazard) %>%
+  summarize(n = n()) %>%
+  rbind(c("Total", 10)) %>%
+  mutate("Number of Households" = as.integer(n),
+         "Number of children in Hazardous Labor" = childNumDefiniteHazard) %>%
+  select('Number of children in Hazardous Labor', 'Number of Households')
+print(xtable(ethiopiaChildHazard,
+       caption = 'Number of Children in Hazardous Work per Household for Child Headed Households'),
+       caption.placement = "top",
+       include.rownames = FALSE)
+```
+
+```{r, echo = FALSE, results = 'asis'}
+# Ethiopia Child Headed Worst
+ethiopiaChildWorst <- ethiopiaHousehold %>%
+  filter(headType == "Child (<18)") %>%
+  select(quesID, childNumDefiniteWorst) %>%
+  group_by(childNumDefiniteWorst) %>%
+  summarize(n = n()) %>%
+  rbind(c("Total", 10)) %>%
+  mutate("Number of Households" = as.integer(n),
+         "Number of children in Worst Child Labor" = childNumDefiniteWorst) %>%
+  select('Number of children in Worst Child Labor', 'Number of Households')
+print(xtable(ethiopiaChildWorst, 
+       caption = 'Number of Children in Worst Child Labor per Household for Child Headed Households'),
+       caption.placement = "top",
+       include.rownames = FALSE)
+```
+
+Uganda only had 2 households headed by children. One household housed one child in hazardous work (which was in fact the household head, and the only person in that household), while the other housed 3 children in the worst forms of child labor and hazardous work. These children were the only members in that household, and were all considered to be in both hazardous and worst forms of child labor by the definitions outlined in this report.
+
+Since only 12 households out of the entire survey data for both Ethiopia and Uganda were headed by children, it is difficult to discern whether or not child headed households have higher instances of housing a child in hazardous or worst forms of child labor than households headed by adults. Furthermore, one household in Ethiopia was reported as being headed by a child, while still housing adults aged above 40 years old. Therefore, some of the households in this small subset may have been inaccurately reported as being headed by children.
+
+
+
