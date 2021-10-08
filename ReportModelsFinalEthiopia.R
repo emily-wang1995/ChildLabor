@@ -182,8 +182,7 @@ p <- data.frame(pval = format(round(coef(summary(ehReducedModelHazard))[,4], 3),
                               nsmall = 3), stringsAsFactors = FALSE) %>%
   mutate(pval = ifelse(pval == "0.000", "< 0.001", pval))
 
-
-
+#create a dataframe for analysis of the reduced model and variables created above
 eHouseTableHazard <- data.frame(a = c("Intercept",
                                       "Average age of household children between ages 5 and 17",
                                       "Married adult female heads (baseline: adult male)",
