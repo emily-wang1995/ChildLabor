@@ -39,10 +39,12 @@ options(xtable.comment = FALSE)
 # Loading in all datasets and necessary files
 
 # Loading data for counts for child labor questions
+
 source("countsForQuestions.R")
 source("ReportModelsFinalEthiopia.R")
 
 # Loading in Ethiopia datasets
+
 ethiopia <- read.csv("../Data/FinalData/ethiopiaFinal.csv",
                      stringsAsFactors = FALSE)
 ethiopiaHousehold <- read.csv("../Data/FinalData/ethiopiaHousehold.csv",
@@ -63,12 +65,15 @@ In this section, the distribution for each outcome variable is assessed, as well
 
 ```{r, echo = FALSE, fig.width = 7, fig.height = 4}
 # Counts for hazard ethiopia household
+
 p1 <- ggplot(ethiopiaHouseholdm, aes(hazardCat)) + geom_bar(fill = "aquamarine3") +
   xlab("Are there any children in hazardous work?") + ylab("Number of households") +
   ggtitle("Ethiopia households with \nand without hazardous child labor") +
   geom_text(stat='count', aes(label=..count..), vjust=-.5) +
   scale_y_continuous(limits = c(0, 1550))
+  
 # Counts for worst ethiopia household
+
 p2 <- ggplot(ethiopiaHouseholdm, aes(worstCat)) + geom_bar(fill = "aquamarine3") +
   xlab("Are there any children in worst child labor?") + ylab("Number of households") +
   ggtitle("Ethiopia households with \nand without worst child labor") +
@@ -78,7 +83,8 @@ grid.arrange(p1, p2, ncol = 2)
 ```
 
 ```{r, echo = FALSE, results = 'asis'}
-# hazard and worst
+# hazard and worst counts for Ethiopia Households that overlap
+
 hazardWorstEH <- ethiopiaHouseholdm %>%
   group_by(hazardCat, worstCat) %>%
   summarize(n = n()) %>%
@@ -89,6 +95,7 @@ hazardWorstEH <- ethiopiaHouseholdm %>%
          "Hazardous Labor: Yes" = Yes, 
          "Hazardous Labor: No" = No) %>%
   as.data.frame()
+  
 print(xtable(hazardWorstEH, caption = 'Overlap between worst and hazardous labor outcomes for Ethiopia households'),
       include.rownames = FALSE, caption.placement = "top")
 ```
@@ -100,6 +107,7 @@ print(xtable(hazardWorstEH, caption = 'Overlap between worst and hazardous labor
 # Code needed to make graphs and tables in this section
 
 # number of households per head type in Ethiopia
+
 eTextHead <- ethiopiaHouseholdm %>%
   select(headType) %>%
   group_by(headType) %>%
@@ -107,11 +115,13 @@ eTextHead <- ethiopiaHouseholdm %>%
   ungroup() %>%
   spread(headType, n)
 
+# Labels for Graphs
 eHeadLabels <- c(`Adult Male` = "Adult Male\n(n = 1272)",
                  `Married Adult Female` = "Married Adult Female\n(n = 250)",
                  `Single Adult Female` = "Single Adult Female\n(n = 283)")
 
-# Ethiopia Household Data for Graphs 
+# Ethiopia Household Data for Graphs (Percentage of Houses with Child in Hazardous Child Labor)
+
 eHouseHeadHazard <- ethiopiaHouseholdm %>%
   mutate(hazardCat = ifelse(childNumDefiniteHazardCat == 1, "Yes", "No"),
          worstCat = ifelse(childNumDefiniteWorstCat == 1, "Yes", "No")) %>%
@@ -122,6 +132,8 @@ eHouseHeadHazard <- ethiopiaHouseholdm %>%
                         ifelse(headType == "Married Adult Female", 250, 283)),
          percent = round((n/total)*100, 1),
          percentLabel = paste0(percent, "%", sep = ""))
+         
+# Ethiopia Household Data for Graphs (Percentage of Houses with Child in Worst Child Labor)
 
 eHouseHeadWorst <- ethiopiaHouseholdm %>%
   mutate(hazardCat = ifelse(childNumDefiniteHazardCat == 1, "Yes", "No"),
