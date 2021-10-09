@@ -154,7 +154,11 @@ In fact, 25% of adult male headed households have no children in hazardous labor
 
 When this variable was included in predicting hazardous labor for Ethiopia households, it was found that both married adult female heads and single adult female heads were significant predictors, and associated with higher odds of hazardous labor compared to male headed households. Therefore, there is evidence to suggest that male headed households are associated with lower odds of housing a child in hazardous labor.
 
+
 ```{r, echo = FALSE, fig.height = 4, fig.width = 7}
+
+# plot for Percentage of Houses with Child in Hazardous Child Labor
+
 ggplot(eHouseHeadHazard, aes(hazardCat, percent)) + 
   geom_bar(stat = "identity", fill = "aquamarine3") + 
   facet_wrap(~headType, labeller = as_labeller(eHeadLabels)) +
@@ -170,6 +174,9 @@ The figure below displays the same information except with children in the worst
 When this parameter was included in predicting worst child labor instances at a household level in Ethiopia, single adult female headed households were significantly associated with increased odds of worst child labor household instances compared to male headed households. However, married adult female headed households were not found to be significantly different than male headed households. 
 
 ```{r, echo = FALSE, fig.height = 4, fig.width = 7}
+
+# plot for Percentage of Houses with Child in Worst Child Labor
+
 ggplot(eHouseHeadWorst, aes(worstCat, percent)) + 
   geom_bar(stat = "identity", fill = "aquamarine3") + 
   facet_wrap(~headType, labeller = as_labeller(eHeadLabels)) +
