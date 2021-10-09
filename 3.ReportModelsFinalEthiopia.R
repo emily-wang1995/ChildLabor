@@ -39,7 +39,10 @@ ethiopiaHouseholdm <- ethiopiaHousehold %>%
          worstCat = ifelse(childNumDefiniteWorstCat == 1, "Yes", "No")) %>%
   ungroup()
 
-# Ethiopia Household Model Data Complete Cases - get rid of missing data
+# Ethiopia Household Model Data Complete Cases - get rid of missing data 
+# (It was documented in the sampling documents that an individual could refrain from answering if they did not feel comfortable answering, and 
+# it was also documented that some variables were left blank if the individual responded “no”. This makes it impossible to discern which points are 
+# truly missing, not answered due to individual circumstances, or are answered “no”)
 ethiopiaHouseholdmComplete <- ethiopiaHouseholdm %>%
   select(quesID, childNumDefiniteHazardCat, childNumDefiniteWorstCat,
          avg517Age, avgAdultAge, headType, totalChild517, residenceType,
