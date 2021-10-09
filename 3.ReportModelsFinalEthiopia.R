@@ -1,5 +1,5 @@
 # This script contains all code to create new data frame for modeling
-# as well as all models created for Ethiopia
+# as well as all models created for Ethiopia Household Hazardous Labor
 
 
 # Required packages
