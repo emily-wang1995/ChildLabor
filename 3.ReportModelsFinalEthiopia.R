@@ -53,7 +53,7 @@ ethiopiaHouseholdmComplete <- ethiopiaHouseholdm %>%
 # Ethiopia Household Hazard
 set.seed(10)
 
-#Create train and test for Ethiopia Household dataset.
+# Create train and test for Ethiopia Household dataset.
 
 Percentage <- nrow(ethiopiaHouseholdmComplete)*3/4
 numtrain <- sample(1:dim(ethiopiaHouseholdmComplete)[1], round(Percentage), replace = FALSE, prob = NULL)
@@ -61,115 +61,115 @@ numtest <- -numtrain
 EHouseholdtrainset <- ethiopiaHouseholdmComplete[sort(numtrain),]
 EHouseholdtestset <- ethiopiaHouseholdmComplete[numtest,]
 
-###Train both full and reduced generalized linear model (binomial)
+### Train both full and reduced generalized linear model (binomial)
 
-#Run full Generalized linear model (family = binomial) on training set for Ethiopia Household dataset using 
-#if there was at least one child (5-17) in hazardous labor in the household as the dependent variable .
+# Run full Generalized linear model (family = binomial) on training set for Ethiopia Household dataset using 
+# if there was at least one child (5-17) in hazardous labor in the household as the dependent variable .
 
 ehFullModelHazard <- glm(childNumDefiniteHazardCat ~ avg517Age + avgAdultAge +
                            headType + totalChild517 + residenceType + homeOwner +
                            homeRooms + totalIncomeLog + totalAdults,
                          data = EHouseholdtrainset, family = "binomial")
 
-#Use backwards step-wise regression, each model was reduced to only include variables that helped minimize the model’s AIC. 
+# Use backwards step-wise regression, each model was reduced to only include variables that helped minimize the model’s AIC. 
 step(ehFullModelHazard, direction = "backward")
 
-#Run reduced generalized linear model(family = binomial) on training set from the backwards step- wise regression.
+# Run reduced generalized linear model(family = binomial) on training set from the backwards step- wise regression.
 ehReducedModelHazard <- glm(formula = childNumDefiniteHazardCat ~ avg517Age + headType + 
                               totalChild517 + residenceType + totalIncomeLog , 
                             family = "binomial", data = EHouseholdtrainset)
 
-###Testing on Full Model
+### Testing on Full Model
 
-#Predict using full generalized linear model on test set
+# Predict using full generalized linear model on test set
 pred_glmFull <- predict(ehFullModelHazard , EHouseholdtestset)
 
-#Categorize predictions into yes or no if there was at least one child (5-17) in hazardous labor in the household .
+# Categorize predictions into yes or no if there was at least one child (5-17) in hazardous labor in the household .
 optCutOff <- optimalCutoff(EHouseholdtestset$childNumDefiniteHazardCat, pred_glmFull)[1]
 pred_glm_factorFull <- ifelse(pred_glmFull > optCutOff, 1, 0)
 head(data.frame(pred_glmFull,pred_glm_factorFull),30)
 
-#Code to see confusion matrix and statistics.Sensitivity is low. 
+# Code to see confusion matrix and statistics.Sensitivity is low. 
 caret::confusionMatrix(as.factor(pred_glm_factorFull), as.factor(EHouseholdtestset$childNumDefiniteHazardCat))
 
-#ROC curve - obtain the Area under the curve 
+# ROC curve - obtain the Area under the curve 
 par(mfrow = c(1, 1))
 roc.curve(EHouseholdtestset$childNumDefiniteHazardCat,pred_glmFull)
 
-###Testing on Reduced Model
+### Testing on Reduced Model
 
-#Predict using reduced generalized linear model (family = binomial) on test set
+# Predict using reduced generalized linear model (family = binomial) on test set
 pred_glm <- predict(ehReducedModelHazard, EHouseholdtestset)
 
-#Categorize predictions into yes or no if there was at least one child (5-17) in hazardous labor in the household .
+# Categorize predictions into yes or no if there was at least one child (5-17) in hazardous labor in the household .
 optCutOff <- optimalCutoff(EHouseholdtestset$childNumDefiniteHazardCat, pred_glm)[1]
 pred_glm_factor <- ifelse(pred_glm > optCutOff, 1, 0)
 head(data.frame(pred_glm,pred_glm_factor),30)
 
-#Code to see confusion matrix and statistics. Sensitivity is low. Accuracy
+# Code to see confusion matrix and statistics. Sensitivity is low. Accuracy
 caret::confusionMatrix(as.factor(pred_glm_factor), as.factor(EHouseholdtestset$childNumDefiniteHazardCat))
  
-#ROC curve - obtain the Area under the curve 
+# ROC curve - obtain the Area under the curve 
 par(mfrow = c(1, 1))
 roc.curve(EHouseholdtestset$childNumDefiniteHazardCat,pred_glm)
 
-#choose the reduced model as it has a higher accuracy and area under the curve for the ROC using less variables in comparison to the full model. 
+# Choose the reduced model as it has a higher accuracy and area under the curve for the ROC using less variables in comparison to the full model. 
 
-###Training on Random Forest
+### Training on Random Forest
 
-#make all the characters into factors
+# make all the characters into factors
 EHouseholdtrainset_fac= EHouseholdtrainset %>% mutate_if(is.character, as.factor)
 EHouseholdtestset_fac= EHouseholdtestset %>% mutate_if(is.character, as.factor)
 
-#Random Forest model
+# Random Forest model
 EHModelHazard.forest <- randomForest(as.factor(childNumDefiniteHazardCat) ~ avg517Age + avgAdultAge +
                                 headType + totalChild517 + residenceType + homeOwner +
                                 homeRooms + totalIncomeLog + totalAdults, EHouseholdtrainset_fac, ntree=100, importance = TRUE)
-#find variable importance measures
+# find variable importance measures
 importance <- importance(EHModelHazard.forest)
 
-###Testing on Random Forest
-#Prediction from random forest 
+### Testing on Random Forest
+# Prediction from random forest 
 pred_rf <- predict(EHModelHazard.forest, EHouseholdtestset_fac)
 
-#Confusion Matrix and Statistics
+# Confusion Matrix and Statistics
 caret::confusionMatrix(pred_rf, as.factor(EHouseholdtestset_fac$childNumDefiniteHazardCat))
 
-#ROC curve - obtain the Area under the curve 
+# ROC curve - obtain the Area under the curve 
 par(mfrow = c(1, 1))
 roc.curve(EHouseholdtestset$childNumDefiniteHazardCat,pred_rf)
 
-#area under the curve and accuracy is lower for the random forest model in comparison to the reduced glm model.
+# area under the curve and accuracy is lower for the random forest model in comparison to the reduced glm model.
 
-###Tune Random Forest parameters
-#variable plot of most important features
+### Tune Random Forest parameters
+# variable plot of most important features
 varImpPlot(EHModelHazard.forest, sort = T, n.var = 5, main = 'Top 5 Feature Importance')
 
-#plot the errors percentages for different amount of trees
+# plot the errors percentages for different amount of trees
 plot(EHModelHazard.forest)
 
 
-#make trainset into a data frame
+# make trainset into a data frame
 responseCol <- match("childNumDefiniteHazardCat", names(EHouseholdtrainset_fac))
 EHouseholdtrainset_fac <- as.data.frame(EHouseholdtrainset_fac)
 
-#find the optimal mtry for random forest with tuned parameters
+# find the optimal mtry for random forest with tuned parameters
 t <- tuneRF(EHouseholdtrainset_fac[, -responseCol], as.factor(EHouseholdtrainset_fac[, responseCol]), stepFactor = 0.5, plot = TRUE, ntreeTry = 25, trace = TRUE, improve = 0.05)
 
-###Training tuned random forest
-#create 2nd random forest with tuned parameters
+### Training tuned random forest
+# create 2nd random forest with tuned parameters
 rfModel_new <- randomForest(as.factor(childNumDefiniteHazardCat) ~ avg517Age + avgAdultAge +
                               headType + totalChild517 + residenceType + homeOwner +
                               homeRooms + totalIncomeLog + totalAdults, EHouseholdtrainset_fac, ntree = 20, mtry = 3, importance = TRUE, proximity = TRUE)
 
-###Testing tuned random forest
-#predict using random forest with tuned parameters on test set 
+### Testing tuned random forest
+# predict using random forest with tuned parameters on test set 
 pred_rf2 <- predict(rfModel_new, EHouseholdtestset_fac)
 
-#use confusion Matrix to see accuract and sensitivity
+# use confusion Matrix to see accuract and sensitivity
 caret::confusionMatrix(pred_rf2, as.factor(EHouseholdtestset_fac$childNumDefiniteHazardCat))
 
-#ROC curve - obtain the Area under the curve 
+# ROC curve - obtain the Area under the curve 
 par(mfrow = c(1, 1))
 roc.curve(EHouseholdtestset_fac$childNumDefiniteHazardCat,pred_rf2)
 
@@ -177,9 +177,9 @@ roc.curve(EHouseholdtestset_fac$childNumDefiniteHazardCat,pred_rf2)
 ## Reduced generalized linear model (binomial) is chosen since it has the highest accuracy and AUC. It is also the most interpretable.
 
 
-###Interpretation of reduced model.
+### Interpretation of reduced model.
 
-#Get coefficient (odds ratio) for variables, confidence intervals, and p-value from reduced model
+# Get coefficient (odds ratio) for variables, confidence intervals, and p-value from reduced model
 coef <- data.frame(val = round(exp(ehReducedModelHazard$coefficients), 2))
 ciTemp <- as.data.frame(exp(confint(ehReducedModelHazard)))
 ci <- data.frame(lower = format(round(ciTemp[,1], 2), nsmall = 2), 
@@ -189,7 +189,7 @@ p <- data.frame(pval = format(round(coef(summary(ehReducedModelHazard))[,4], 3),
   mutate(pval = ifelse(pval == "0.000", "< 0.001", pval))
 
 
-#create a dataframe for analysis of the reduced model and variables created above
+# create a dataframe for analysis of the reduced model and variables created above
 eHouseTableHazard <- data.frame(a = c("Intercept",
                                       "Average age of household children between ages 5 and 17",
                                       "Married adult female heads (baseline: adult male)",
